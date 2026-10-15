@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<title>ConstructSales CRM</title>
+<style>
+:root{--bg:#f4f5f2;--card:#fff;--ink:#17201a;--mute:#6b7569;--line:#e4e7e1;--acc:#14532d;--acc2:#e8f1ea;--warn:#b45309;--bad:#b91c1c;--r:16px}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.4;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input,select{font:inherit;color:inherit}
+.hide{display:none!important}
+header{position:sticky;top:0;z-index:20;background:var(--bg);padding:calc(14px + env(safe-area-inset-top)) 16px 10px;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:20px;letter-spacing:-.02em}
+h2{font-size:13px;color:var(--mute);font-weight:600;margin:20px 0 8px}
+main{padding:0 16px;max-width:720px;margin:0 auto}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;border:1px solid var(--line)}
+.tap{cursor:pointer}.tap:active{background:var(--acc2)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mute{color:var(--mute);font-size:13px}.b{font-weight:650}
+.big{font-size:30px;font-weight:700;letter-spacing:-.03em}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpis .card{margin:0}
+.hero{background:var(--acc);color:#fff;border:0;grid-column:1/-1}
+.hero .mute{color:#b7d3bf}
+.chip{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;background:var(--acc2);color:var(--acc);font-weight:600;margin:0 4px 4px 0}
+.chip.High{background:#fee2e2;color:var(--bad)}.chip.Lost{background:#fee2e2;color:var(--bad)}.chip.Won{background:#dcfce7;color:#166534}
+.chip.n{background:#eef0eb;color:var(--mute)}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px}
+input:focus,select:focus{outline:2px solid var(--acc);border-color:transparent}
+label{display:block;font-size:12px;color:var(--mute);margin:12px 0 4px;font-weight:600}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;background:var(--acc);color:#fff;padding:13px;border-radius:12px;font-weight:650;width:100%;cursor:pointer}
+.btn.sm{width:auto;padding:8px 14px;font-size:14px}
+.btn.ghost{background:var(--acc2);color:var(--acc)}
+.x{border:0;background:none;color:var(--mute);font-size:22px;padding:4px 8px;cursor:pointer}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:20}
+nav button{flex:1;border:0;background:none;padding:10px 0 8px;font-size:11px;color:var(--mute);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav button.on{color:var(--acc);font-weight:700}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:0;background:var(--acc);color:#fff;box-shadow:0 6px 18px #14532d55;z-index:25;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fab svg{width:26px;height:26px;stroke-width:2.4}
+.sheet{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{background:var(--bg);width:100%;max-width:640px;max-height:94vh;overflow-y:auto;border-radius:24px 24px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.stk{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:6px;font-size:14px}
+.add{background:var(--acc2);border-radius:14px;padding:12px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#17201a;color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;z-index:99}
+#login{position:fixed;inset:0;z-index:100;background:var(--acc);display:flex;align-items:center;justify-content:center;padding:24px}
+#login form{background:#fff;border-radius:24px;padding:28px 22px;width:100%;max-width:360px}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:18px}
+pre{background:#17201a;color:#d9e4db;padding:12px;border-radius:12px;font-size:11px;overflow-x:auto;max-height:340px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <form onsubmit="doLogin(event)">
+    <h1 style="font-size:24px">ConstructSales</h1>
+    <p class="mute" style="margin:2px 0 10px">Sign in to your pipeline</p>
+    <label>Username</label><input id="lu" autocomplete="username" autocapitalize="none" required>
+    <label>Password</label><input id="lp" type="password" autocomplete="current-password" required>
+    <div class="err" id="lerr"></div>
+    <button class="btn" style="margin-top:6px">Sign in</button>
+  </form>
+</div>
+
+<header>
+  <h1 id="title">Pipeline</h1>
+  <div class="row" style="gap:6px">
+    <button class="btn ghost sm" id="syncBtn" onclick="show('setup')">Offline</button>
+    <button class="x" onclick="logout()" title="Sign out" style="font-size:14px">Sign out</button>
+  </div>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section id="v-home">
+    <div class="kpis">
+      <div class="card hero"><div class="mute">Open pipeline</div><div class="big" id="k-usd">$0</div><div class="mute" id="k-idr">Rp 0</div></div>
+      <div class="card"><div class="mute">Active projects</div><div class="big" id="k-act">0</div></div>
+      <div class="card"><div class="mute">Win rate</div><div class="big" id="k-win">0%</div><div class="mute" id="k-wl"></div></div>
+    </div>
+    <h2>Next awards</h2><div id="h-next"></div>
+    <h2>High priority</h2><div id="h-high"></div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="v-projects" class="hide">
+    <input id="q" placeholder="Search project or company" oninput="renderProjects()">
+    <div class="g2" style="margin:10px 0 14px">
+      <select id="fs" onchange="renderProjects()"><option value="">All status</option><option>Active</option><option>Won</option><option>Lost</option></select>
+      <select id="fp" onchange="renderProjects()"><option value="">All priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+    </div>
+    <div id="p-list"></div>
+  </section>
+
+  <!-- COMPANIES -->
+  <section id="v-companies" class="hide">
+    <input id="cq" placeholder="Search company or contact" oninput="renderCompanies()" style="margin-bottom:14px">
+    <div id="c-list"></div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="v-setup" class="hide">
+    <div class="card">
+      <div class="b">Google Sheets sync</div>
+      <p class="mute" style="margin:4px 0 0">Paste your Apps Script Web App URL. Without it, data stays on this device.</p>
+      <label>Web App URL</label><input id="url" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      <div class="g2" style="margin-top:12px"><button class="btn" onclick="saveUrl()">Save & sync</button><button class="btn ghost" onclick="offline()">Use offline</button></div>
+    </div>
+    <div class="card">
+      <div class="b">1. Sheet tabs</div>
+      <p class="mute" style="margin-top:6px">Create 3 tabs with these exact names and header row:</p>
+      <p style="margin-top:8px;font-size:13px"><b>Projects:</b> ID, ProjectTitle, Stage, Status, PowerUSD, BuildingUSD, PowerIDR, BuildingIDR, ExpectedAwardDate, Priority</p>
+      <p style="margin-top:8px;font-size:13px"><b>Stakeholders:</b> ID, ProjectID, Role, Company, PIC</p>
+      <p style="margin-top:8px;font-size:13px"><b>ActivityLogs:</b> ID, ProjectID, RemarkText, LoggedTimestamp, LoggedBy</p>
+    </div>
+    <div class="card">
+      <div class="row"><div class="b">2. Apps Script (Code.gs)</div><button class="btn sm" onclick="copyCode()">Copy</button></div>
+      <p class="mute" style="margin-top:6px">Extensions > Apps Script, paste, then Deploy as Web App (Execute as: Me, Access: Anyone).</p>
+<pre id="code">function doGet(e){return h(e)}
+function doPost(e){return h(e)}
+function h(e){
+  var ss=SpreadsheetApp.getActive();
+  var b=e.postData?JSON.parse(e.postData.contents):{};
+  var a=b.action||e.parameter.action||'getAll';
+  if(a==='getAll')return out({status:'success',projects:rd(ss,'Projects'),stakeholders:rd(ss,'Stakeholders'),activityLogs:rd(ss,'ActivityLogs')});
+  if(a==='saveProject'){
+    up(ss,'Projects',b.project);
+    var s=ss.getSheetByName('Stakeholders');
+    var keep=s.getDataRange().getValues().filter(function(r,i){return i===0||r[1]!==b.project.ID});
+    s.clearContents();
+    s.getRange(1,1,keep.length,keep[0].length).setValues(keep);
+    (b.stakeholders||[]).forEach(function(x){up(ss,'Stakeholders',x)});
+  }
+  if(a==='saveActivity')up(ss,'ActivityLogs',b.activity);
+  if(a==='deleteProject'){
+    ['Projects','Stakeholders','ActivityLogs'].forEach(function(n){
+      var sh=ss.getSheetByName(n),c=n==='Projects'?0:1,v=sh.getDataRange().getValues();
+      for(var i=v.length-1;i>0;i--){if(v[i][c]===b.id)sh.deleteRow(i+1)}
+    });
+  }
+  return out({status:'success'});
+}
+function rd(ss,n){
+  var v=ss.getSheetByName(n).getDataRange().getValues();
+  var hd=v[0];
+  return v.slice(1).map(function(r){var o={};hd.forEach(function(k,i){o[k]=r[i]});return o});
+}
+function up(ss,n,rec){
+  var s=ss.getSheetByName(n);
+  var v=s.getDataRange().getValues();
+  var hd=v[0],ix=hd.indexOf('ID'),row=-1;
+  v.forEach(function(r,i){if(i>0&&r[ix]===rec.ID)row=i+1});
+  var d=hd.map(function(k){return rec[k]!==undefined?rec[k]:''});
+  if(row>0)s.getRange(row,1,1,d.length).setValues([d]);else s.appendRow(d);
+}
+function out(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON)}</pre>
+    </div>
+  </section>
+</main>
+
+<button class="fab" id="fab" onclick="openProject()" aria-label="New project"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<nav id="nav">
+  <button data-v="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</button>
+  <button data-v="projects"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Projects</button>
+  <button data-v="companies"><svg viewBox="0 0 24 24"><path d="M4 21V5a1 1 0 011-1h9a1 1 0 011 1v16M15 10h4a1 1 0 011 1v10M2 21h20M8 8h3M8 12h3M8 16h3"/></svg>Companies</button>
+  <button data-v="setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 00-2-1.2L14 3h-4l-.6 2.7a7 7 0 00-2 1.2l-2.3-1-2 3.4 2 1.5a7 7 0 000 2.4l-2 1.5 2 3.4 2.3-1a7 7 0 002 1.2L10 21h4l.6-2.7a7 7 0 002-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Setup</button>
+</nav>
+
+<!-- PROJECT SHEET -->
+<div class="sheet hide" id="sheet" onclick="if(event.target===this)closeProject()">
+  <div>
+    <div class="row"><h1 id="sTitle">New project</h1><button class="x" onclick="closeProject()">&times;</button></div>
+    <input type="hidden" id="fId">
+    <label>Project title</label><input id="fTitle" placeholder="e.g. Grand Jakarta Tower">
+    <div class="g2">
+      <div><label>Stage</label><select id="fStage"><option>Concept</option><option>Design</option><option>Tender Released</option><option>MainCont Awarded</option><option>SubCont Awarded</option></select></div>
+      <div><label>Status</label><select id="fStatus"><option>Active</option><option>Won</option><option>Lost</option></select></div>
+      <div><label>Priority</label><select id="fPri"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+      <div><label>Expected award</label><input type="date" id="fDate"></div>
+    </div>
+    <div class="g2">
+      <div><label>Smart Power (USD)</label><input type="number" inputmode="decimal" id="fPU" value="0"></div>
+      <div><label>Smart Building (USD)</label><input type="number" inputmode="decimal" id="fBU" value="0"></div>
+      <div><label>Smart Power (IDR)</label><input type="number" inputmode="decimal" id="fPI" value="0"></div>
+      <div><label>Smart Building (IDR)</label><input type="number" inputmode="decimal" id="fBI" value="0"></div>
+    </div>
+
+    <h2>Stakeholders</h2>
+    <div id="stList"></div>
+    <div class="add">
+      <div class="g2">
+        <div><label style="margin-top:0">Role</label><select id="sRole"><option>Consultant</option><option>Main Contractor</option><option>Sub-contractor</option><option>Panel Builder</option></select></div>
+        <div><label style="margin-top:0">Company</label><input id="sCo" list="dlCo" placeholder="Pick or type" oninput="fillPics()"></div>
+      </div>
+      <label>Contact person (remark)</label><input id="sPic" list="dlPic" placeholder="Optional, e.g. Ir. Budi">
+      <button class="btn sm" style="margin-top:10px" onclick="addStk()">Add stakeholder</button>
+    </div>
+    <datalist id="dlCo"></datalist><datalist id="dlPic"></datalist>
+
+    <button class="btn" style="margin-top:18px" onclick="saveProject()">Save project</button>
+    <button class="btn ghost hide" id="delBtn" style="margin-top:10px;color:var(--bad)" onclick="delProject()">Delete project</button>
+
+    <div id="actBox" class="hide">
+      <h2>Activity</h2>
+      <div class="row" style="gap:6px"><input id="aText" placeholder="Add a remark or site visit note"><button class="btn sm" onclick="addAct()">Log</button></div>
+      <div id="actList" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- AUTH (hardcoded) ----------
+const USER='wewix', PASS='wewix';
+function doLogin(e){
+  e.preventDefault();
+  if(lu.value.trim()===USER && lp.value===PASS){
+    try{localStorage.setItem('crm_auth','1')}catch(_){}
+    login.classList.add('hide'); lerr.textContent=''; start();
+  } else lerr.textContent='Wrong username or password.';
+}
+function logout(){try{localStorage.removeItem('crm_auth')}catch(_){} location.reload()}
+
+// ---------- DATA ----------
+const seed={projects:[],stakeholders:[],activityLogs:[]};
+let db=JSON.parse(JSON.stringify(seed)), scriptUrl='', draft=[], view='home';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>parseFloat(v)||0;
+const usd=v=>'$'+Math.round(num(v)).toLocaleString();
+const idr=v=>{v=num(v);return v>=1e9?'Rp '+(v/1e9).toFixed(1)+' B':v>=1e6?'Rp '+(v/1e6).toFixed(1)+' M':'Rp '+v.toLocaleString()};
+const tot=p=>num(p.PowerUSD)+num(p.BuildingUSD);
+const co=s=>s.Company||s.Firm||'';
+const date=d=>String(d||'').slice(0,10);
+function save(){try{localStorage.setItem('crm_db',JSON.stringify(db))}catch(_){}}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
+
+// ---------- NAV ----------
+$('nav').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.v)};
+function show(v){
+  view=v;
+  ['home','projects','companies','setup'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==v));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  $('title').textContent={home:'Pipeline',projects:'Projects',companies:'Companies',setup:'Setup'}[v];
+  $('fab').classList.toggle('hide',v==='setup');
+  render(); scrollTo(0,0);
+}
+function render(){renderHome();renderProjects();renderCompanies();fillCompanyList()}
+
+// ---------- RENDER ----------
+function pCard(p){
+  const st=db.stakeholders.filter(s=>s.ProjectID===p.ID);
+  return `<div class="card tap" onclick="openProject('${esc(p.ID)}')">
+    <div class="row" style="align-items:flex-start"><div class="b">${esc(p.ProjectTitle)}</div><div class="b" style="white-space:nowrap">${usd(tot(p))}</div></div>
+    <div style="margin:6px 0 2px"><span class="chip n">${esc(p.Stage)}</span><span class="chip ${esc(p.Status)}">${esc(p.Status)}</span><span class="chip ${p.Priority==='High'?'High':'n'}">${esc(p.Priority)}</span></div>
+    <div class="mute">Award ${esc(date(p.ExpectedAwardDate))} · Power ${usd(p.PowerUSD)} · Building ${usd(p.BuildingUSD)}</div>
+    ${st.length?`<div class="mute" style="margin-top:6px">${st.map(s=>esc(co(s))).join(', ')}</div>`:''}
+  </div>`;
+}
+function renderHome(){
+  const P=db.projects, act=P.filter(p=>p.Status==='Active');
+  const w=P.filter(p=>p.Status==='Won').length, l=P.filter(p=>p.Status==='Lost').length;
+  $('k-usd').textContent=usd(act.reduce((a,p)=>a+tot(p),0));
+  $('k-idr').textContent=idr(act.reduce((a,p)=>a+num(p.PowerIDR)+num(p.BuildingIDR),0));
+  $('k-act').textContent=act.length;
+  $('k-win').textContent=(w+l?Math.round(w/(w+l)*100):0)+'%';
+  $('k-wl').textContent=w+' won, '+l+' lost';
+  const next=[...act].sort((a,b)=>date(a.ExpectedAwardDate).localeCompare(date(b.ExpectedAwardDate))).slice(0,3);
+  $('h-next').innerHTML=next.map(pCard).join('')||'<p class="mute">No active projects. Tap + to add one.</p>';
+  const hi=act.filter(p=>p.Priority==='High');
+  $('h-high').innerHTML=hi.map(pCard).join('')||'<p class="mute">Nothing marked high priority.</p>';
+}
+function renderProjects(){
+  const q=$('q').value.toLowerCase(), s=$('fs').value, pr=$('fp').value;
+  const list=db.projects.filter(p=>{
+    const names=db.stakeholders.filter(x=>x.ProjectID===p.ID).map(x=>co(x)+' '+(x.PIC||'')).join(' ').toLowerCase();
+    return (!q||p.ProjectTitle.toLowerCase().includes(q)||names.includes(q))&&(!s||p.Status===s)&&(!pr||p.Priority===pr);
+  });
+  $('p-list').innerHTML=list.map(pCard).join('')||'<p class="mute" style="text-align:center;padding:30px 0">No projects match.</p>';
+}
+function groupCompanies(){
+  const m={};
+  db.stakeholders.forEach(s=>{
+    const k=co(s).trim(); if(!k)return;
+    const key=k.toLowerCase();
+    const g=m[key]||(m[key]={name:k,links:[]});
+    const p=db.projects.find(x=>x.ID===s.ProjectID);
+    if(p)g.links.push({p,role:s.Role,pic:s.PIC});
+  });
+  return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function renderCompanies(){
+  const q=$('cq').value.toLowerCase();
+  const list=groupCompanies().filter(g=>!q||g.name.toLowerCase().includes(q)||g.links.some(l=>(l.pic||'').toLowerCase().includes(q)));
+  $('c-list').innerHTML=list.map(g=>`<div class="card">
+    <div class="row"><div class="b">${esc(g.name)}</div><span class="chip">${g.links.length} project${g.links.length===1?'':'s'}</span></div>
+    ${g.links.map(l=>`<div class="tap" style="padding:8px 0;border-top:1px solid var(--line);margin-top:8px" onclick="openProject('${esc(l.p.ID)}')">
+      <div class="b" style="font-size:14px">${esc(l.p.ProjectTitle)}</div>
+      <div class="mute">${esc(l.role)}${l.pic?' · '+esc(l.pic):''} · ${esc(l.p.Stage)}</div></div>`).join('')}
+  </div>`).join('')||'<p class="mute" style="text-align:center;padding:30px 0">No companies yet. Add stakeholders to a project.</p>';
+}
+
+// ---------- PROJECT SHEET ----------
+function fillCompanyList(){
+  $('dlCo').innerHTML=groupCompanies().map(g=>`<option value="${esc(g.name)}">`).join('');
+}
+function fillPics(){
+  const c=$('sCo').value.trim().toLowerCase();
+  const pics=[...new Set(db.stakeholders.filter(s=>co(s).toLowerCase()===c&&s.PIC).map(s=>s.PIC))];
+  $('dlPic').innerHTML=pics.map(p=>`<option value="${esc(p)}">`).join('');
+}
+function drawDraft(){
+  $('stList').innerHTML=draft.map((s,i)=>`<div class="stk"><div><div class="b">${esc(s.Company)}</div><div class="mute">${esc(s.Role)}${s.PIC?' · '+esc(s.PIC):''}</div></div><button class="x" onclick="draft.splice(${i},1);drawDraft()">&times;</button></div>`).join('')||'<p class="mute">None yet. Add the consultant, contractors and panel builder below.</p>';
+}
+function addStk(){
+  const c=$('sCo').value.trim();
+  if(!c){toast('Enter a company name');return}
+  draft.push({Role:$('sRole').value,Company:c,PIC:$('sPic').value.trim()});
+  $('sCo').value='';$('sPic').value='';$('dlPic').innerHTML='';
+  drawDraft();
+}
+function openProject(id){
+  const p=id&&db.projects.find(x=>x.ID===id);
+  $('sheet').classList.remove('hide'); document.body.style.overflow='hidden';
+  $('sTitle').textContent=p?'Edit project':'New project';
+  $('actBox').classList.toggle('hide',!p);$('delBtn').classList.toggle('hide',!p);
+  const d=p||{ID:'PRJ-'+Date.now().toString().slice(-6),ProjectTitle:'',Stage:'Concept',Status:'Active',Priority:'Medium',ExpectedAwardDate:new Date().toISOString().slice(0,10),PowerUSD:0,BuildingUSD:0,PowerIDR:0,BuildingIDR:0};
+  $('fId').value=d.ID;$('fTitle').value=d.ProjectTitle;$('fStage').value=d.Stage;$('fStatus').value=d.Status;$('fPri').value=d.Priority;
+  $('fDate').value=date(d.ExpectedAwardDate);$('fPU').value=num(d.PowerUSD);$('fBU').value=num(d.BuildingUSD);$('fPI').value=num(d.PowerIDR);$('fBI').value=num(d.BuildingIDR);
+  draft=p?db.stakeholders.filter(s=>s.ProjectID===p.ID).map(s=>({Role:s.Role,Company:co(s),PIC:s.PIC||''})):[];
+  drawDraft(); fillCompanyList(); if(p)drawActs(p.ID);
+}
+function closeProject(){$('sheet').classList.add('hide');document.body.style.overflow='';render()}
+function saveProject(){
+  const title=$('fTitle').value.trim();
+  if(!title){toast('Enter a project title');return}
+  if($('sCo').value.trim())addStk();
+  const id=$('fId').value;
+  const p={ID:id,ProjectTitle:title,Stage:$('fStage').value,Status:$('fStatus').value,Priority:$('fPri').value,ExpectedAwardDate:$('fDate').value,
+    PowerUSD:num($('fPU').value),BuildingUSD:num($('fBU').value),PowerIDR:num($('fPI').value),BuildingIDR:num($('fBI').value)};
+  const i=db.projects.findIndex(x=>x.ID===id);
+  if(i>-1)db.projects[i]=p;else db.projects.push(p);
+  const sts=draft.map((s,n)=>({ID:'S-'+id+'-'+n+'-'+Date.now().toString(36),ProjectID:id,Role:s.Role,Company:s.Company,PIC:s.PIC}));
+  db.stakeholders=db.stakeholders.filter(s=>s.ProjectID!==id).concat(sts);
+  save(); push({action:'saveProject',project:p,stakeholders:sts});
+  toast('Project saved'); closeProject();
+}
+function delProject(){
+  const id=$('fId').value, p=db.projects.find(x=>x.ID===id);
+  if(!p||!confirm('Delete "'+p.ProjectTitle+'" and its stakeholders and activity? This also removes it from the sheet.'))return;
+  db.projects=db.projects.filter(x=>x.ID!==id);
+  db.stakeholders=db.stakeholders.filter(x=>x.ProjectID!==id);
+  db.activityLogs=db.activityLogs.filter(x=>x.ProjectID!==id);
+  save(); push({action:'deleteProject',id}); toast('Project deleted'); closeProject();
+}
+function drawActs(pid){
+  const l=db.activityLogs.filter(a=>a.ProjectID===pid).reverse();
+  $('actList').innerHTML=l.map(a=>`<div class="stk" style="display:block"><div>${esc(a.RemarkText)}</div><div class="mute">${esc(a.LoggedBy)} · ${esc(a.LoggedTimestamp)}</div></div>`).join('')||'<p class="mute">No activity yet.</p>';
+}
+function addAct(){
+  const t=$('aText').value.trim(); if(!t)return;
+  const n=new Date(), pid=$('fId').value;
+  const a={ID:'A-'+Date.now(),ProjectID:pid,RemarkText:t,LoggedTimestamp:n.toISOString().slice(0,10)+' '+n.toTimeString().slice(0,5),LoggedBy:'wewix'};
+  db.activityLogs.push(a); save(); push({action:'saveActivity',activity:a});
+  $('aText').value=''; drawActs(pid); toast('Logged');
+}
+
+// ---------- SYNC ----------
+function setSync(t){$('syncBtn').textContent=t}
+function saveUrl(){
+  const u=$('url').value.trim(); if(!u)return;
+  scriptUrl=u; try{localStorage.setItem('crm_url',u)}catch(_){} pull();
+}
+function offline(){scriptUrl='';try{localStorage.removeItem('crm_url')}catch(_){} setSync('Offline');toast('Using this device only')}
+function pull(){
+  if(!scriptUrl)return; setSync('Syncing…');
+  fetch(scriptUrl+'?action=getAll').then(r=>r.json()).then(d=>{
+    if(d.status!=='success')throw 0;
+    db.projects=d.projects||[];db.stakeholders=d.stakeholders||[];db.activityLogs=d.activityLogs||[];
+    save(); setSync('Synced'); toast('Synced with Google Sheet'); render();
+  }).catch(e=>{console.error(e);setSync('Sync failed');toast('Load failed: '+(e&&e.message?e.message:'check the URL and that access is Anyone'))});
+}
+function push(body){
+  if(!scriptUrl)return;
+  fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
+    .then(()=>setSync('Synced')).catch(()=>{setSync('Sync failed');toast('Could not save to the sheet. Check your connection.')});
+}
+function copyCode(){
+  const t=$('code').textContent;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Code copied')).catch(()=>{
+    const r=document.createRange();r.selectNodeContents($('code'));const s=getSelection();s.removeAllRanges();s.addRange(r);
+    try{document.execCommand('copy');toast('Code copied')}catch(_){toast('Select and copy manually')}
+  });
+}
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&scriptUrl&&$('sheet').classList.contains('hide'))pull()});
+
+// ---------- START ----------
+function start(){
+  try{const s=localStorage.getItem('crm_db');if(s)db=JSON.parse(s);scriptUrl=localStorage.getItem('crm_url')||''}catch(_){}
+  const demo=new Set(['PRJ-001','PRJ-002','PRJ-003','S1','S2','S3','S4','S5','A1','A2']);
+  db.projects=db.projects.filter(x=>!demo.has(x.ID));db.stakeholders=db.stakeholders.filter(x=>!demo.has(x.ID));db.activityLogs=db.activityLogs.filter(x=>!demo.has(x.ID));save();
+  $('url').value=scriptUrl; setSync(scriptUrl?'Synced':'Offline');
+  show('home'); if(scriptUrl)pull();
+}
+try{if(localStorage.getItem('crm_auth')==='1'){login.classList.add('hide');start()}else show('home')}catch(_){show('home')}
+</script>
+</body>
+</html>
