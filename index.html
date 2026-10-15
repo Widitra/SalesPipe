@@ -227,6 +227,7 @@ function logout(){try{localStorage.removeItem('crm_auth')}catch(_){} location.re
 
 // ---------- DATA ----------
 const seed={projects:[],stakeholders:[],activityLogs:[]};
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbycxYcs3TJhkmA3MYhFZ9rwwq9ShON1sVam2hoIR9p_3J9bii1x723U6xKhLbh_O0WPIg/exec';
 let db=JSON.parse(JSON.stringify(seed)), scriptUrl='', draft=[], view='home';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -401,7 +402,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&scriptUrl
 
 // ---------- START ----------
 function start(){
-  try{const s=localStorage.getItem('crm_db');if(s)db=JSON.parse(s);scriptUrl=localStorage.getItem('crm_url')||''}catch(_){}
+  try{const s=localStorage.getItem('crm_db');if(s)db=JSON.parse(s);scriptUrl=localStorage.getItem('crm_url')||DEFAULT_URL}catch(_){scriptUrl=DEFAULT_URL}
   const demo=new Set(['PRJ-001','PRJ-002','PRJ-003','S1','S2','S3','S4','S5','A1','A2']);
   db.projects=db.projects.filter(x=>!demo.has(x.ID));db.stakeholders=db.stakeholders.filter(x=>!demo.has(x.ID));db.activityLogs=db.activityLogs.filter(x=>!demo.has(x.ID));save();
   $('url').value=scriptUrl; setSync(scriptUrl?'Synced':'Offline');
