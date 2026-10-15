@@ -69,7 +69,7 @@ pre{background:#17201a;color:#d9e4db;padding:12px;border-radius:12px;font-size:1
 <header>
   <h1 id="title">Pipeline</h1>
   <div class="row" style="gap:6px">
-    <button class="btn ghost sm" id="syncBtn" onclick="show('setup')">Offline</button>
+    <button class="btn ghost sm" id="syncBtn" onclick="pull()">Offline</button>
     <button class="x" onclick="logout()" title="Sign out" style="font-size:14px">Sign out</button>
   </div>
 </header>
@@ -88,17 +88,18 @@ pre{background:#17201a;color:#d9e4db;padding:12px;border-radius:12px;font-size:1
 
   <!-- PROJECTS -->
   <section id="v-projects" class="hide">
-    <input id="q" placeholder="Search project or company" oninput="renderProjects()">
+    <input id="q" placeholder="Search project or company" oninput="lim.p=25;renderProjects()">
     <div class="g2" style="margin:10px 0 14px">
-      <select id="fs" onchange="renderProjects()"><option value="">All status</option><option>Active</option><option>Won</option><option>Lost</option></select>
-      <select id="fp" onchange="renderProjects()"><option value="">All priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <select id="fs" onchange="lim.p=25;renderProjects()"><option value="">All status</option><option>Active</option><option>Won</option><option>Lost</option></select>
+      <select id="fp" onchange="lim.p=25;renderProjects()"><option value="">All priority</option><option>High</option><option>Medium</option><option>Low</option></select>
     </div>
     <div id="p-list"></div>
   </section>
 
   <!-- COMPANIES -->
   <section id="v-companies" class="hide">
-    <input id="cq" placeholder="Search company or contact" oninput="renderCompanies()" style="margin-bottom:14px">
+    <input id="cq" placeholder="Search company or contact" oninput="lim.c=25;renderCompanies()">
+    <select id="cf" onchange="lim.c=25;renderCompanies()" style="margin:10px 0 14px"><option value="">All stakeholder types</option><option>Consultant</option><option>Main Contractor</option><option>Sub-contractor</option><option>Panel Builder</option><option>End User</option></select>
     <div id="c-list"></div>
   </section>
 
@@ -126,28 +127,31 @@ function h(e){
   var ss=SpreadsheetApp.getActive();
   var b=e.postData?JSON.parse(e.postData.contents):{};
   var a=b.action||e.parameter.action||'getAll';
-  if(a==='getAll')return out({status:'success',projects:rd(ss,'Projects'),stakeholders:rd(ss,'Stakeholders'),activityLogs:rd(ss,'ActivityLogs')});
+  if(a==='getAll')return out({status:'success',projects:rd(ss,'Projects'),stakeholders:rd(ss,'Stakeholders')});
+  if(a==='getActivity')return out({status:'success',activityLogs:rd(ss,'ActivityLogs',1,e.parameter.id)});
   if(a==='saveProject'){
     up(ss,'Projects',b.project);
-    var s=ss.getSheetByName('Stakeholders');
-    var keep=s.getDataRange().getValues().filter(function(r,i){return i===0||r[1]!==b.project.ID});
-    s.clearContents();
-    s.getRange(1,1,keep.length,keep[0].length).setValues(keep);
+    delRows(ss,'Stakeholders',1,b.project.ID);
     (b.stakeholders||[]).forEach(function(x){up(ss,'Stakeholders',x)});
   }
   if(a==='saveActivity')up(ss,'ActivityLogs',b.activity);
+  if(a==='deleteActivity')delRows(ss,'ActivityLogs',0,b.id);
   if(a==='deleteProject'){
-    ['Projects','Stakeholders','ActivityLogs'].forEach(function(n){
-      var sh=ss.getSheetByName(n),c=n==='Projects'?0:1,v=sh.getDataRange().getValues();
-      for(var i=v.length-1;i>0;i--){if(v[i][c]===b.id)sh.deleteRow(i+1)}
-    });
+    delRows(ss,'Projects',0,b.id);
+    delRows(ss,'Stakeholders',1,b.id);
+    delRows(ss,'ActivityLogs',1,b.id);
   }
   return out({status:'success'});
 }
-function rd(ss,n){
+function rd(ss,n,col,id){
+  var tz=ss.getSpreadsheetTimeZone();
   var v=ss.getSheetByName(n).getDataRange().getValues();
   var hd=v[0];
-  return v.slice(1).map(function(r){var o={};hd.forEach(function(k,i){o[k]=r[i]});return o});
+  return v.slice(1).filter(function(r){return id===undefined||r[col]===id}).map(function(r){
+    var o={};
+    hd.forEach(function(k,i){var x=r[i];o[k]=x instanceof Date?Utilities.formatDate(x,tz,'yyyy-MM-dd HH:mm'):x});
+    return o;
+  });
 }
 function up(ss,n,rec){
   var s=ss.getSheetByName(n);
@@ -156,6 +160,10 @@ function up(ss,n,rec){
   v.forEach(function(r,i){if(i>0&&r[ix]===rec.ID)row=i+1});
   var d=hd.map(function(k){return rec[k]!==undefined?rec[k]:''});
   if(row>0)s.getRange(row,1,1,d.length).setValues([d]);else s.appendRow(d);
+}
+function delRows(ss,n,col,id){
+  var sh=ss.getSheetByName(n),v=sh.getDataRange().getValues();
+  for(var i=v.length-1;i>0;i--){if(v[i][col]===id)sh.deleteRow(i+1)}
 }
 function out(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON)}</pre>
     </div>
@@ -194,7 +202,7 @@ function out(o){return ContentService.createTextOutput(JSON.stringify(o)).setMim
     <div id="stList"></div>
     <div class="add">
       <div class="g2">
-        <div><label style="margin-top:0">Role</label><select id="sRole"><option>Consultant</option><option>Main Contractor</option><option>Sub-contractor</option><option>Panel Builder</option></select></div>
+        <div><label style="margin-top:0">Role</label><select id="sRole"><option>Consultant</option><option>Main Contractor</option><option>Sub-contractor</option><option>Panel Builder</option><option>End User</option></select></div>
         <div><label style="margin-top:0">Company</label><input id="sCo" list="dlCo" placeholder="Pick or type" oninput="fillPics()"></div>
       </div>
       <label>Contact person (remark)</label><input id="sPic" list="dlPic" placeholder="Optional, e.g. Ir. Budi">
@@ -227,6 +235,7 @@ function logout(){try{localStorage.removeItem('crm_auth')}catch(_){} location.re
 
 // ---------- DATA ----------
 const seed={projects:[],stakeholders:[],activityLogs:[]};
+const lim={p:25,c:25};
 const DEFAULT_URL='https://script.google.com/macros/s/AKfycbycxYcs3TJhkmA3MYhFZ9rwwq9ShON1sVam2hoIR9p_3J9bii1x723U6xKhLbh_O0WPIg/exec';
 let db=JSON.parse(JSON.stringify(seed)), scriptUrl='', draft=[], view='home';
 const $=id=>document.getElementById(id);
@@ -273,7 +282,7 @@ function renderHome(){
   const next=[...act].sort((a,b)=>date(a.ExpectedAwardDate).localeCompare(date(b.ExpectedAwardDate))).slice(0,3);
   $('h-next').innerHTML=next.map(pCard).join('')||'<p class="mute">No active projects. Tap + to add one.</p>';
   const hi=act.filter(p=>p.Priority==='High');
-  $('h-high').innerHTML=hi.map(pCard).join('')||'<p class="mute">Nothing marked high priority.</p>';
+  $('h-high').innerHTML=hi.slice(0,10).map(pCard).join('')||'<p class="mute">Nothing marked high priority.</p>';
 }
 function renderProjects(){
   const q=$('q').value.toLowerCase(), s=$('fs').value, pr=$('fp').value;
@@ -281,7 +290,8 @@ function renderProjects(){
     const names=db.stakeholders.filter(x=>x.ProjectID===p.ID).map(x=>co(x)+' '+(x.PIC||'')).join(' ').toLowerCase();
     return (!q||p.ProjectTitle.toLowerCase().includes(q)||names.includes(q))&&(!s||p.Status===s)&&(!pr||p.Priority===pr);
   });
-  $('p-list').innerHTML=list.map(pCard).join('')||'<p class="mute" style="text-align:center;padding:30px 0">No projects match.</p>';
+  $('p-list').innerHTML=list.slice(0,lim.p).map(pCard).join('')||'<p class="mute" style="text-align:center;padding:30px 0">No projects match.</p>';
+  if(list.length>lim.p)$('p-list').innerHTML+=`<button class="btn ghost" onclick="lim.p+=25;renderProjects()">Show more (${list.length-lim.p} left)</button>`;
 }
 function groupCompanies(){
   const m={};
@@ -295,14 +305,16 @@ function groupCompanies(){
   return Object.values(m).sort((a,b)=>a.name.localeCompare(b.name));
 }
 function renderCompanies(){
-  const q=$('cq').value.toLowerCase();
-  const list=groupCompanies().filter(g=>!q||g.name.toLowerCase().includes(q)||g.links.some(l=>(l.pic||'').toLowerCase().includes(q)));
-  $('c-list').innerHTML=list.map(g=>`<div class="card">
+  const q=$('cq').value.toLowerCase(), role=$('cf').value;
+  const list=groupCompanies().map(g=>({name:g.name,links:g.links.filter(l=>!role||l.role===role)}))
+    .filter(g=>g.links.length&&(!q||g.name.toLowerCase().includes(q)||g.links.some(l=>(l.pic||'').toLowerCase().includes(q))));
+  $('c-list').innerHTML=list.slice(0,lim.c).map(g=>`<div class="card">
     <div class="row"><div class="b">${esc(g.name)}</div><span class="chip">${g.links.length} project${g.links.length===1?'':'s'}</span></div>
     ${g.links.map(l=>`<div class="tap" style="padding:8px 0;border-top:1px solid var(--line);margin-top:8px" onclick="openProject('${esc(l.p.ID)}')">
       <div class="b" style="font-size:14px">${esc(l.p.ProjectTitle)}</div>
       <div class="mute">${esc(l.role)}${l.pic?' · '+esc(l.pic):''} · ${esc(l.p.Stage)}</div></div>`).join('')}
-  </div>`).join('')||'<p class="mute" style="text-align:center;padding:30px 0">No companies yet. Add stakeholders to a project.</p>';
+  </div>`).join('')||'<p class="mute" style="text-align:center;padding:30px 0">No companies found.</p>';
+  if(list.length>lim.c)$('c-list').innerHTML+=`<button class="btn ghost" onclick="lim.c+=25;renderCompanies()">Show more (${list.length-lim.c} left)</button>`;
 }
 
 // ---------- PROJECT SHEET ----------
@@ -333,7 +345,7 @@ function openProject(id){
   $('fId').value=d.ID;$('fTitle').value=d.ProjectTitle;$('fStage').value=d.Stage;$('fStatus').value=d.Status;$('fPri').value=d.Priority;
   $('fDate').value=date(d.ExpectedAwardDate);$('fPU').value=num(d.PowerUSD);$('fBU').value=num(d.BuildingUSD);$('fPI').value=num(d.PowerIDR);$('fBI').value=num(d.BuildingIDR);
   draft=p?db.stakeholders.filter(s=>s.ProjectID===p.ID).map(s=>({Role:s.Role,Company:co(s),PIC:s.PIC||''})):[];
-  drawDraft(); fillCompanyList(); if(p)drawActs(p.ID);
+  drawDraft(); fillCompanyList(); if(p){drawActs(p.ID);loadActs(p.ID)}
 }
 function closeProject(){$('sheet').classList.add('hide');document.body.style.overflow='';render()}
 function saveProject(){
@@ -358,9 +370,15 @@ function delProject(){
   db.activityLogs=db.activityLogs.filter(x=>x.ProjectID!==id);
   save(); push({action:'deleteProject',id}); toast('Project deleted'); closeProject();
 }
+const ts=x=>String(x||'').replace('T',' ').slice(0,16);
 function drawActs(pid){
   const l=db.activityLogs.filter(a=>a.ProjectID===pid).reverse();
-  $('actList').innerHTML=l.map(a=>`<div class="stk" style="display:block"><div>${esc(a.RemarkText)}</div><div class="mute">${esc(a.LoggedBy)} · ${esc(a.LoggedTimestamp)}</div></div>`).join('')||'<p class="mute">No activity yet.</p>';
+  $('actList').innerHTML=l.map(a=>`<div class="stk"><div><div>${esc(a.RemarkText)}</div><div class="mute">${esc(a.LoggedBy)} · ${esc(ts(a.LoggedTimestamp))}</div></div><button class="x" onclick="delAct('${esc(a.ID)}')" aria-label="Delete remark">&times;</button></div>`).join('')||'<p class="mute">No activity yet.</p>';
+}
+function delAct(id){
+  if(!confirm('Delete this remark? This also removes it from the sheet.'))return;
+  db.activityLogs=db.activityLogs.filter(a=>a.ID!==id);
+  save(); push({action:'deleteActivity',id}); drawActs($('fId').value); toast('Remark deleted');
 }
 function addAct(){
   const t=$('aText').value.trim(); if(!t)return;
@@ -378,17 +396,30 @@ function saveUrl(){
 }
 function offline(){scriptUrl='';try{localStorage.removeItem('crm_url')}catch(_){} setSync('Offline');toast('Using this device only')}
 function pull(){
-  if(!scriptUrl)return; setSync('Syncing…');
+  if(!scriptUrl){show('setup');return}
+  const b=$('syncBtn'); b.disabled=true; setSync('Loading…');
   fetch(scriptUrl+'?action=getAll').then(r=>r.json()).then(d=>{
+    if(d.status!=='success')throw new Error(d.message||'Script error');
+    db.projects=d.projects||[]; db.stakeholders=d.stakeholders||[];
+    const ids=new Set(db.projects.map(p=>p.ID));
+    db.activityLogs=db.activityLogs.filter(a=>ids.has(a.ProjectID));
+    save(); setSync('Refresh'); toast('Up to date'); render();
+  }).catch(e=>{console.error(e);setSync('Retry');toast('Load failed: '+(e&&e.message?e.message:'check the URL'))})
+  .finally(()=>{b.disabled=false});
+}
+function loadActs(pid){
+  if(!scriptUrl)return;
+  if(!db.activityLogs.some(a=>a.ProjectID===pid))$('actList').innerHTML='<p class="mute">Loading…</p>';
+  fetch(scriptUrl+'?action=getActivity&id='+encodeURIComponent(pid)).then(r=>r.json()).then(d=>{
     if(d.status!=='success')throw 0;
-    db.projects=d.projects||[];db.stakeholders=d.stakeholders||[];db.activityLogs=d.activityLogs||[];
-    save(); setSync('Synced'); toast('Synced with Google Sheet'); render();
-  }).catch(e=>{console.error(e);setSync('Sync failed');toast('Load failed: '+(e&&e.message?e.message:'check the URL and that access is Anyone'))});
+    db.activityLogs=db.activityLogs.filter(a=>a.ProjectID!==pid).concat(d.activityLogs||[]);
+    save(); if($('fId').value===pid)drawActs(pid);
+  }).catch(()=>{if($('fId').value===pid)drawActs(pid)});
 }
 function push(body){
   if(!scriptUrl)return;
   fetch(scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
-    .then(()=>setSync('Synced')).catch(()=>{setSync('Sync failed');toast('Could not save to the sheet. Check your connection.')});
+    .catch(()=>{setSync('Retry');toast('Could not save to the sheet. Check your connection.')});
 }
 function copyCode(){
   const t=$('code').textContent;
@@ -398,14 +429,12 @@ function copyCode(){
   });
 }
 
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&scriptUrl&&$('sheet').classList.contains('hide'))pull()});
-
 // ---------- START ----------
 function start(){
   try{const s=localStorage.getItem('crm_db');if(s)db=JSON.parse(s);scriptUrl=localStorage.getItem('crm_url')||DEFAULT_URL}catch(_){scriptUrl=DEFAULT_URL}
   const demo=new Set(['PRJ-001','PRJ-002','PRJ-003','S1','S2','S3','S4','S5','A1','A2']);
   db.projects=db.projects.filter(x=>!demo.has(x.ID));db.stakeholders=db.stakeholders.filter(x=>!demo.has(x.ID));db.activityLogs=db.activityLogs.filter(x=>!demo.has(x.ID));save();
-  $('url').value=scriptUrl; setSync(scriptUrl?'Synced':'Offline');
+  $('url').value=scriptUrl; setSync(scriptUrl?'Refresh':'Offline');
   show('home'); if(scriptUrl)pull();
 }
 try{if(localStorage.getItem('crm_auth')==='1'){login.classList.add('hide');start()}else show('home')}catch(_){show('home')}
